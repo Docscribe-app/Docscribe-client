@@ -2,6 +2,10 @@
 
 A modern, feature-rich PDF annotation application built with React and TypeScript. This application allows users to view, annotate, and collaborate on PDF documents with role-based access control.
 
+## 🚀 Live Demo
+
+**Deployed Application:** [https://docscribe.vercel.app/](https://docscribe.vercel.app/)
+
 ## Screenshots
 
 ### Home Page
