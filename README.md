@@ -6,8 +6,8 @@ A modern, feature-rich PDF annotation application built with React and TypeScrip
 
   **Clone the repository**
    ```bash
-   git clone https://github.com/Docscribe-app/docscribe-client.git
-   cd docscribe-client
+   git clone https://github.com/Docscribe-app/Docscribe-client.git
+   cd Docscribe-client
    ```
 
   **Install dependencies**
