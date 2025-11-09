@@ -6,8 +6,8 @@ A modern, feature-rich PDF annotation application built with React and TypeScrip
 
   **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd annotation-client
+   git clone https://github.com/Docscribe-app/docscribe-client.git
+   cd docscribe-client
    ```
 
   **Install dependencies**
@@ -45,7 +45,30 @@ A modern, feature-rich PDF annotation application built with React and TypeScrip
 
 ---
 
-## 📁 Folder Structure
+## Technology Stack
+
+### Core Technologies
+- **React** - Modern JavaScript library with hooks and concurrent features
+- **TypeScript** - Type-safe JavaScript superset
+- **Vite** - Fast build tool and dev server
+- **Node.js** - JavaScript runtime environment
+
+### Key Libraries
+- **React Router** - Client-side routing and navigation
+- **react-pdf** - PDF.js wrapper for React
+- **pdfjs-lib** - PDF rendering engine
+- **Axios** - HTTP client for API communication
+- **Redux Toolkit** - State management
+- **Tailwind CSS** - Utility-first CSS framework
+- **React Icons** - Icon library
+- **React Hot Toast** - Toast notifications
+- **Socket.io Client** - Real-time communication
+- **PostCSS** - CSS transformation tool
+- **Autoprefixer** - CSS vendor prefixing
+
+---
+
+## Folder Structure
 
 ```
 annotation-client/
