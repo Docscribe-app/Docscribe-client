@@ -2,58 +2,73 @@
 
 A modern, feature-rich PDF annotation application built with React and TypeScript. This application allows users to view, annotate, and collaborate on PDF documents with role-based access control.
 
+## Screenshots
+
+### Home Page
+![Home Page](https://res.cloudinary.com/domebtgvk/image/upload/v1762698326/Screenshot_2025-11-09_195518_ncdnqy.png)
+
+### Annotations Page
+![Annotations Page](https://res.cloudinary.com/domebtgvk/image/upload/v1762698241/Screenshot_2025-11-09_195352_s24rpd.png)
+
 ### Installation
 
-  **Clone the repository**
-   ```bash
-   git clone https://github.com/Docscribe-app/Docscribe-client.git
-   cd Docscribe-client
-   ```
+**Clone the repository**
 
-  **Install dependencies**
-   ```bash
-   npm install
-   ```
+```bash
+git clone https://github.com/Docscribe-app/Docscribe-client.git
+cd Docscribe-client
+```
 
-  **Configure API endpoint**
-   
-   Update the base URL in .env:
-   ```typescript
-   VITE_API_URL = http://your-api-url
-   ```
+**Install dependencies**
 
-  **Run development server**
-   ```bash
-   npm run dev
-   ```
-   
-   The application will be available at `http://localhost:5173`
+```bash
+npm install
+```
 
-  **Build for production**
-   ```bash
-   npm run build
-   ```
+**Configure API endpoint**
+
+Update the base URL in .env:
+
+```typescript
+VITE_API_URL = http://your-api-url
+```
+
+**Run development server**
+
+```bash
+npm run dev
+```
+
+The application will be available at `http://localhost:5173`
+
+**Build for production**
+
+```bash
+npm run build
+```
 
 ### Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot reload |
-| `npm run build` | Build production-ready application |
-| `npm run lint` | Run ESLint for code quality checks |
-| `npm run preview` | Preview production build locally |
+| Command           | Description                              |
+| ----------------- | ---------------------------------------- |
+| `npm run dev`     | Start development server with hot reload |
+| `npm run build`   | Build production-ready application       |
+| `npm run lint`    | Run ESLint for code quality checks       |
+| `npm run preview` | Preview production build locally         |
 
 ---
 
 ## Technology Stack
 
 ### Core Technologies
+
 - **React** - Modern JavaScript library with hooks and concurrent features
 - **TypeScript** - Type-safe JavaScript superset
 - **Vite** - Fast build tool and dev server
 - **Node.js** - JavaScript runtime environment
 
 ### Key Libraries
+
 - **React Router** - Client-side routing and navigation
 - **react-pdf** - PDF.js wrapper for React
 - **pdfjs-lib** - PDF rendering engine
@@ -128,18 +143,20 @@ annotation-client/
 The application communicates with a backend server for document and annotation management.
 
 ### Base Configuration
+
 ```typescript
 // src/api/http.ts
-import axios from 'axios';
+import axios from "axios";
 
 export const http = axios.create({
-  baseURL: process.env.VITE_API_URL || 'http://localhost:3000'
+  baseURL: process.env.VITE_API_URL || "http://localhost:3000",
 });
 ```
 
 ### Document Endpoints
 
 #### List Documents
+
 ```typescript
 GET /api/documents
 Headers: { userId, userName, userRole }
@@ -147,6 +164,7 @@ Response: ServerDocMeta[]
 ```
 
 #### Upload Documents
+
 ```typescript
 POST /api/documents
 Headers: { userId, userName, userRole }
@@ -155,12 +173,14 @@ Response: ServerDocMeta[]
 ```
 
 #### Get Document File
+
 ```typescript
 GET /api/documents/:docId/file
 Response: PDF file stream
 ```
 
 #### Delete Document
+
 ```typescript
 DELETE /api/documents/:docId
 Headers: { userId, userName, userRole }
@@ -170,6 +190,7 @@ Response: { status: 200 }
 ### Annotation Endpoints
 
 #### List Annotations
+
 ```typescript
 GET /api/annotations/document/:docId
 Headers: { userId, userName, userRole }
@@ -177,6 +198,7 @@ Response: ServerAnnotation[]
 ```
 
 #### Create Annotation
+
 ```typescript
 POST /api/annotations/document/:docId
 Headers: { userId, userName, userRole }
@@ -195,6 +217,7 @@ Response: ServerAnnotation
 ```
 
 #### Update Annotation
+
 ```typescript
 PATCH /api/annotations/:id
 Headers: { userId, userName, userRole }
@@ -203,6 +226,7 @@ Response: ServerAnnotation
 ```
 
 #### Delete Annotation
+
 ```typescript
 DELETE /api/annotations/:id
 Headers: { userId, userName, userRole }
@@ -225,16 +249,16 @@ interface ServerAnnotation {
   _id: string;
   docId: string;
   page: number;
-  kind?: 'point' | 'highlight' | 'freehand' | 'shape';
+  kind?: "point" | "highlight" | "freehand" | "shape";
   x?: number;
   y?: number;
   note: string;
   creatorId: string;
-  visibility: 'all' | string[];
+  visibility: "all" | string[];
   createdAt: string;
   rect?: { x: number; y: number; w: number; h: number };
   path?: { x: number; y: number }[];
-  shape?: 'rect' | 'ellipse';
+  shape?: "rect" | "ellipse";
   color?: string;
 }
 ```
@@ -250,6 +274,7 @@ The annotation system uses an **SVG overlay** positioned above the PDF canvas to
 ### Annotation Types
 
 #### 1. **Freehand Drawing**
+
 - User draws free-form paths on the PDF
 - Captured as array of coordinate points
 - Rendered as SVG `<path>` elements
@@ -257,14 +282,15 @@ The annotation system uses an **SVG overlay** positioned above the PDF canvas to
 
 ```typescript
 interface FreehandAnnotation {
-  kind: 'freehand';
-  path: { x: number; y: number }[];  // Percentage-based coordinates
+  kind: "freehand";
+  path: { x: number; y: number }[]; // Percentage-based coordinates
   color: string;
   page: number;
 }
 ```
 
 #### 2. **Rectangle Shape**
+
 - Click and drag to create rectangular annotations
 - Stores position and dimensions
 - Rendered as SVG `<rect>` elements
@@ -272,8 +298,8 @@ interface FreehandAnnotation {
 
 ```typescript
 interface RectangleAnnotation {
-  kind: 'shape';
-  shape: 'rect';
+  kind: "shape";
+  shape: "rect";
   rect: { x: number; y: number; w: number; h: number };
   color: string;
   page: number;
@@ -281,14 +307,15 @@ interface RectangleAnnotation {
 ```
 
 #### 3. **Circle Shape**
+
 - Click and drag to create circular annotations
 - Radius calculated from drag distance
 - Rendered as SVG `<ellipse>` elements
 
 ```typescript
 interface CircleAnnotation {
-  kind: 'shape';
-  shape: 'ellipse';
+  kind: "shape";
+  shape: "ellipse";
   rect: { x: number; y: number; w: number; h: number };
   color: string;
   page: number;
@@ -296,13 +323,14 @@ interface CircleAnnotation {
 ```
 
 #### 4. **Text Highlighting**
+
 - Select text in PDF to highlight
 - Uses `pointer-events: none` on text layer for selection
 - Semi-transparent overlay with configurable color
 
 ```typescript
 interface HighlightAnnotation {
-  kind: 'highlight';
+  kind: "highlight";
   rect: { x: number; y: number; w: number; h: number };
   color: string;
   page: number;
@@ -357,9 +385,11 @@ const renderY = (percentY / 100) * currentHeight;
 
 ```typescript
 const [annotations, setAnnotations] = useState<Annotation[]>([]);
-const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
-const [currentTool, setCurrentTool] = useState<Tool>('highlight');
-const [currentColor, setCurrentColor] = useState('#FFEB3B');
+const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(
+  null
+);
+const [currentTool, setCurrentTool] = useState<Tool>("highlight");
+const [currentColor, setCurrentColor] = useState("#FFEB3B");
 const [isDrawing, setIsDrawing] = useState(false);
 const [drawPath, setDrawPath] = useState<{ x: number; y: number }[]>([]);
 ```
@@ -388,26 +418,26 @@ Comments are loaded automatically when annotations are fetched and displayed in 
 
 ### Role Types
 
-| Role | ID | Permissions |
-|------|-----|------------|
-| **Admin** | A1 | Full access - create, edit, delete all annotations and documents |
-| **Default User 1** | D1 | Create annotations, delete own annotations, add comments |
-| **Default User 2** | D2 | Create annotations, delete own annotations, add comments |
-| **Read-Only** | R1 | View annotations only, cannot create/edit/delete |
+| Role               | ID  | Permissions                                                      |
+| ------------------ | --- | ---------------------------------------------------------------- |
+| **Admin**          | A1  | Full access - create, edit, delete all annotations and documents |
+| **Default User 1** | D1  | Create annotations, delete own annotations, add comments         |
+| **Default User 2** | D2  | Create annotations, delete own annotations, add comments         |
+| **Read-Only**      | R1  | View annotations only, cannot create/edit/delete                 |
 
 ### Permission Matrix
 
-| Action | A1 (Admin) | D1/D2 (Users) | R1 (Read-Only) |
-|--------|------------|---------------|----------------|
-| Upload documents | ✅ | ❌ | ❌ |
-| Delete any document | ✅ | ❌ | ❌ |
-| View documents | ✅ | ✅ | ✅ |
-| Create annotations | ✅ | ✅ | ❌ |
-| Delete own annotations | ✅ | ✅ | ❌ |
-| Delete any annotation | ✅ | ❌ | ❌ |
-| Add comments | ✅ | ✅ | ❌ |
-| Delete own comments | ✅ | ✅ | ❌ |
-| Delete any comment | ✅ | ❌ | ❌ |
+| Action                 | A1 (Admin) | D1/D2 (Users) | R1 (Read-Only) |
+| ---------------------- | ---------- | ------------- | -------------- |
+| Upload documents       | ✅         | ❌            | ❌             |
+| Delete any document    | ✅         | ❌            | ❌             |
+| View documents         | ✅         | ✅            | ✅             |
+| Create annotations     | ✅         | ✅            | ❌             |
+| Delete own annotations | ✅         | ✅            | ❌             |
+| Delete any annotation  | ✅         | ❌            | ❌             |
+| Add comments           | ✅         | ✅            | ❌             |
+| Delete own comments    | ✅         | ✅            | ❌             |
+| Delete any comment     | ✅         | ❌            | ❌             |
 
 ### Implementation
 
@@ -429,6 +459,7 @@ const canDelete = current.role === "A1" || annotation.creatorId === current.id;
 ### Visibility Controls
 
 Annotations can be made visible to:
+
 - **Everyone**: All users can see the annotation
 - **A1 only**: Only admins can see
 - **D1 only**: Only D1 users can see
@@ -440,6 +471,7 @@ Annotations can be made visible to:
 ### Main Components
 
 #### 1. **SimpleAnnotationProvider** (`annotation/`)
+
 - **Purpose**: Core PDF viewer with full annotation functionality
 - **Key Features**:
   - PDF rendering with react-pdf
@@ -451,6 +483,7 @@ Annotations can be made visible to:
   - Collapsible annotation panel
 
 #### 2. **DocumentList** (`components/`)
+
 - **Purpose**: Display and manage document list
 - **Features**:
   - Search functionality (name, uploader, date)
@@ -460,6 +493,7 @@ Annotations can be made visible to:
 - **Responsive**: Switches between table and card layout at `md` breakpoint
 
 #### 3. **UploadForm** (`components/`)
+
 - **Purpose**: Upload PDF documents
 - **Features**:
   - Drag-and-drop support
@@ -470,6 +504,7 @@ Annotations can be made visible to:
 - **Permissions**: Only visible to A1 (admin) users
 
 #### 4. **UserSwitcher** (`components/`)
+
 - **Purpose**: Switch between user roles for testing
 - **Features**:
   - Dropdown with all available users
@@ -477,6 +512,7 @@ Annotations can be made visible to:
   - Responsive design
 
 #### 5. **ViewerPage** (`pages/`)
+
 - **Purpose**: PDF viewer page wrapper
 - **Features**:
   - Document metadata display
@@ -486,6 +522,7 @@ Annotations can be made visible to:
 - **Route**: `/viewer/:docId`
 
 #### 6. **DocumentsPage** (`pages/`)
+
 - **Purpose**: Document management page
 - **Features**:
   - Document list display
@@ -494,6 +531,7 @@ Annotations can be made visible to:
 - **Route**: `/`
 
 ### Code Style
+
 - TypeScript for type safety
 - Functional components with hooks
 - Tailwind CSS for styling
@@ -511,6 +549,7 @@ xl:  ≥ 1280px  - Extra large devices
 ```
 
 Key responsive features:
+
 - Collapsible mobile annotation panel
 - Horizontal scrolling toolbar with hidden scrollbars
 - Adaptive padding and text sizes
@@ -518,15 +557,16 @@ Key responsive features:
 - Touch-optimized buttons and interactions
 
 ### Browser Support
+
 - Chrome (recommended)
 - Firefox
 - Safari
 - Edge
 
 PDF.js worker loaded from CDN:
+
 ```typescript
-pdfjs.GlobalWorkerOptions.workerSrc = 
-  `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/4.8.69/pdf.worker.min.mjs`;
 ```
 
 **Built with ❤️ by Aditya**
