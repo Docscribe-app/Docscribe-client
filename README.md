@@ -61,7 +61,6 @@ A modern, feature-rich PDF annotation application built with React and TypeScrip
 - **Redux Toolkit** - State management
 - **Tailwind CSS** - Utility-first CSS framework
 - **React Icons** - Icon library
-- **React Hot Toast** - Toast notifications
 - **Socket.io Client** - Real-time communication
 - **PostCSS** - CSS transformation tool
 - **Autoprefixer** - CSS vendor prefixing
