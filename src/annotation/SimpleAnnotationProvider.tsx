@@ -1064,7 +1064,7 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
         <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-3 shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-2 text-gray-600">
-              <span className="text-sm font-semibold">📄 Read-Only Mode</span>
+              <span className="text-sm font-semibold">Read-Only Mode</span>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -1075,7 +1075,7 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200 hover:shadow"
                 }`}
               >
-                💬 Comments
+                Comments
               </button>
               <div className="flex items-center gap-2 bg-gray-100 rounded-lg px-3 py-2">
                 <button
@@ -1110,9 +1110,7 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
             onLoadSuccess={(info) => setNumPages(info.numPages)}
             loading={
               <div className="flex items-center justify-center h-full mb-5">
-                <div
-                  className="text-center flex items-center gap-3"
-                >
+                <div className="text-center flex items-center gap-3">
                   <CgSpinnerTwo className="animate-spin text-2xl text-gray-700" />
                   <p className="text-gray-600">Loading PDF</p>
                 </div>
@@ -1494,7 +1492,11 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                           <LiaCommentSolid />
                         </div>
                         <p className="text-base font-medium">No comments yet</p>
-                        <p className="text-sm mt-1">Be the first to comment!</p>
+                        {current.role !== "R1" && (
+                          <p className="text-sm mt-1">
+                            Be the first to comment!
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>
@@ -1522,7 +1524,6 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                   ) : (
                     <div className="mt-6 bg-gray-50 p-5 rounded-xl border border-gray-200">
                       <div className="flex items-center gap-2 text-gray-600">
-                        <span className="text-2xl">🔒</span>
                         <div>
                           <p className="text-sm font-semibold">
                             Read-Only Mode
@@ -1537,7 +1538,9 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                 </div>
               ) : (
                 <div className="text-center text-gray-400 py-20">
-                  <div className="text-7xl mb-6">💬</div>
+                  <div className="text-7xl mb-6 flex items-center justify-center">
+                    <LiaCommentSolid />
+                  </div>
                   <p className="text-xl font-medium">Click on an annotation</p>
                   <p className="text-base mt-2">
                     {current.role === "R1"
