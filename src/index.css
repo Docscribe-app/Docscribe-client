@@ -21,10 +21,31 @@ html {
 
 .react-pdf__Page__textContent {
   pointer-events: none !important;
+  position: relative;
+  z-index: 5;
 }
 
 .react-pdf__Page__textContent span {
   pointer-events: auto !important;
+}
+
+/* Enable text selection when highlight tool is active */
+.highlight-mode .react-pdf__Page__textContent {
+  pointer-events: auto !important;
+  z-index: 20;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+.highlight-mode .react-pdf__Page__textContent span {
+  cursor: text !important;
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  -webkit-touch-callout: default !important;
 }
 
 /* Custom scrollbar styles - hidden for toolbar */

@@ -41,7 +41,6 @@ interface Annotation {
   creatorId?: string;
 }
 
-// Memoized Page component to prevent unnecessary rerenders
 const MemoizedPage = React.memo(Page, (prevProps, nextProps) => {
   return (
     prevProps.pageNumber === nextProps.pageNumber &&
@@ -200,7 +199,6 @@ const AnnotationRenderer = React.memo<AnnotationRendererProps>(
   }
 );
 
-// Memoized single page with annotations
 interface PDFPageWithAnnotationsProps {
   pageNumber: number;
   width: number;
@@ -217,6 +215,12 @@ interface PDFPageWithAnnotationsProps {
   ) => void;
   handleMouseMove: (e: React.MouseEvent<SVGSVGElement>) => void;
   handleMouseUp: (e: React.MouseEvent<SVGSVGElement>) => void;
+  handleTouchStart: (
+    e: React.TouchEvent<SVGSVGElement>,
+    pageNum: number
+  ) => void;
+  handleTouchMove: (e: React.TouchEvent<SVGSVGElement>) => void;
+  handleTouchEnd: (e: React.TouchEvent<SVGSVGElement>) => void;
   handleMouseLeave: () => void;
   handleAnnotationClick: (id: string) => void;
   setSelectedAnnotation: (id: string) => void;
@@ -236,6 +240,9 @@ const PDFPageWithAnnotations = React.memo<PDFPageWithAnnotationsProps>(
     handleMouseDown,
     handleMouseMove,
     handleMouseUp,
+    handleTouchStart,
+    handleTouchMove,
+    handleTouchEnd,
     handleMouseLeave,
     handleAnnotationClick,
     setSelectedAnnotation,
@@ -246,10 +253,13 @@ const PDFPageWithAnnotations = React.memo<PDFPageWithAnnotationsProps>(
         style={{
           width,
           userSelect: currentTool === "highlight" ? "text" : "none",
+          WebkitUserSelect: currentTool === "highlight" ? "text" : "none",
+          WebkitTouchCallout: currentTool === "highlight" ? "default" : "none",
         }}
         data-page-number={pageNumber}
       >
         <div
+          className={currentTool === "highlight" ? "highlight-mode" : ""}
           style={{
             pointerEvents: currentTool === "highlight" ? "auto" : "none",
           }}
@@ -272,11 +282,29 @@ const PDFPageWithAnnotations = React.memo<PDFPageWithAnnotationsProps>(
             cursor: currentTool === "highlight" ? "text" : "crosshair",
             zIndex: 10,
             pointerEvents: currentTool === "highlight" ? "none" : "auto",
+            touchAction: currentTool === "highlight" ? "auto" : "none",
           }}
-          onMouseDown={(e) => handleMouseDown(e, pageNumber)}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
+          onMouseDown={
+            currentTool !== "highlight"
+              ? (e) => handleMouseDown(e, pageNumber)
+              : undefined
+          }
+          onMouseMove={
+            currentTool !== "highlight" ? handleMouseMove : undefined
+          }
+          onMouseUp={currentTool !== "highlight" ? handleMouseUp : undefined}
+          onMouseLeave={
+            currentTool !== "highlight" ? handleMouseLeave : undefined
+          }
+          onTouchStart={
+            currentTool !== "highlight"
+              ? (e) => handleTouchStart(e, pageNumber)
+              : undefined
+          }
+          onTouchMove={
+            currentTool !== "highlight" ? handleTouchMove : undefined
+          }
+          onTouchEnd={currentTool !== "highlight" ? handleTouchEnd : undefined}
         >
           {/* Render saved annotations for this page */}
           <AnnotationRenderer
@@ -337,7 +365,6 @@ const PDFPageWithAnnotations = React.memo<PDFPageWithAnnotationsProps>(
     );
   },
   (prevProps, nextProps) => {
-    // Only rerender if these specific props change
     return (
       prevProps.pageNumber === nextProps.pageNumber &&
       prevProps.width === nextProps.width &&
@@ -351,6 +378,9 @@ const PDFPageWithAnnotations = React.memo<PDFPageWithAnnotationsProps>(
       prevProps.handleMouseDown === nextProps.handleMouseDown &&
       prevProps.handleMouseMove === nextProps.handleMouseMove &&
       prevProps.handleMouseUp === nextProps.handleMouseUp &&
+      prevProps.handleTouchStart === nextProps.handleTouchStart &&
+      prevProps.handleTouchMove === nextProps.handleTouchMove &&
+      prevProps.handleTouchEnd === nextProps.handleTouchEnd &&
       prevProps.handleMouseLeave === nextProps.handleMouseLeave &&
       prevProps.handleAnnotationClick === nextProps.handleAnnotationClick &&
       prevProps.setSelectedAnnotation === nextProps.setSelectedAnnotation
@@ -461,6 +491,9 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
       return;
     }
 
+    // Delay to allow selection to complete on mobile (touchend fires before selection is finalized)
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) return;
 
@@ -565,8 +598,35 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
 
   useEffect(() => {
     if (currentTool === "highlight") {
+      let selectionTimeout: ReturnType<typeof setTimeout>;
+
+      const handleSelectionChange = () => {
+        // Clear previous timeout
+        clearTimeout(selectionTimeout);
+
+        // Wait for selection to stabilize (important for mobile)
+        selectionTimeout = setTimeout(() => {
+          const selection = window.getSelection();
+          if (
+            selection &&
+            !selection.isCollapsed &&
+            selection.toString().trim()
+          ) {
+            handleTextSelection();
+          }
+        }, 300);
+      };
+
       document.addEventListener("mouseup", handleTextSelection);
-      return () => document.removeEventListener("mouseup", handleTextSelection);
+      document.addEventListener("touchend", handleSelectionChange);
+      document.addEventListener("selectionchange", handleSelectionChange);
+
+      return () => {
+        clearTimeout(selectionTimeout);
+        document.removeEventListener("mouseup", handleTextSelection);
+        document.removeEventListener("touchend", handleSelectionChange);
+        document.removeEventListener("selectionchange", handleSelectionChange);
+      };
     }
   }, [currentTool, handleTextSelection]);
 
@@ -598,7 +658,6 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
   const toggleRole = (role: string) => {
     if (role === "all") {
       if (selectedRoles === "all") {
-        // Unchecking "Everyone" - switch to empty array
       } else {
         setSelectedRoles("all");
       }
@@ -637,6 +696,28 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
     [currentTool]
   );
 
+  const handleTouchStart = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>, pageNum: number) => {
+      if (currentTool === "highlight") return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = ((touch.clientX - rect.left) / rect.width) * 100;
+      const y = ((touch.clientY - rect.top) / rect.height) * 100;
+
+      setIsDrawing(true);
+      setStartPos({ x, y });
+      setCurrentPage(pageNum);
+
+      if (currentTool === "draw") {
+        setDrawPath([{ x, y }]);
+      }
+    },
+    [currentTool]
+  );
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<SVGSVGElement>) => {
       if (!isDrawing || !startPos) return;
@@ -645,6 +726,35 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
       const rect = svg.getBoundingClientRect();
       const x = ((e.clientX - rect.left) / rect.width) * 100;
       const y = ((e.clientY - rect.top) / rect.height) * 100;
+
+      if (currentTool === "draw") {
+        setDrawPath((prev) => [...prev, { x, y }]);
+      } else if (
+        currentTool === "rectangle" ||
+        currentTool === "circle" ||
+        currentTool === "highlight"
+      ) {
+        setPreviewRect({
+          x: Math.min(startPos.x, x),
+          y: Math.min(startPos.y, y),
+          w: Math.abs(x - startPos.x),
+          h: Math.abs(y - startPos.y),
+        });
+      }
+    },
+    [isDrawing, startPos, currentTool]
+  );
+
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent<SVGSVGElement>) => {
+      if (!isDrawing || !startPos) return;
+      e.preventDefault();
+
+      const touch = e.touches[0];
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const x = ((touch.clientX - rect.left) / rect.width) * 100;
+      const y = ((touch.clientY - rect.top) / rect.height) * 100;
 
       if (currentTool === "draw") {
         setDrawPath((prev) => [...prev, { x, y }]);
@@ -717,7 +827,7 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
 
         const createdAnnotation = {
           ...res.data,
-          color: res.data.color || currentColor, // Fallback to our selected color if backend doesn't return it
+          color: res.data.color || currentColor,
         };
 
         setAnnotations((prev) => {
@@ -749,25 +859,21 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
   const handleMouseUp = useCallback(
     async (e: React.MouseEvent<SVGSVGElement>) => {
       if (!isDrawing || !startPos) return;
-      if (currentTool === "highlight") return; // Handled by text selection
+      if (currentTool === "highlight") return;
 
       const svg = e.currentTarget;
       const rect = svg.getBoundingClientRect();
       const endX = ((e.clientX - rect.left) / rect.width) * 100;
       const endY = ((e.clientY - rect.top) / rect.height) * 100;
 
-      // Calculate the distance/size to check if it's a meaningful annotation
       const distance = Math.sqrt(
         Math.pow(endX - startPos.x, 2) + Math.pow(endY - startPos.y, 2)
       );
 
-      // Only create annotation if there's meaningful movement (threshold: 1% of canvas)
-      // For draw tool, check if there are multiple points
       if (currentTool === "draw") {
         if (drawPath.length > 2) {
           await createAnnotation(endX, endY);
         } else {
-          // Reset drawing state for single clicks
           setIsDrawing(false);
           setDrawPath([]);
           setStartPos(null);
@@ -778,7 +884,6 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
         if (distance > 1) {
           await createAnnotation(endX, endY);
         } else {
-          // Reset drawing state for single clicks
           setIsDrawing(false);
           setDrawPath([]);
           setStartPos(null);
@@ -786,7 +891,46 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
         }
       }
     },
-    [isDrawing, startPos, currentTool, createAnnotation]
+    [isDrawing, startPos, currentTool, createAnnotation, drawPath]
+  );
+
+  const handleTouchEnd = useCallback(
+    async (e: React.TouchEvent<SVGSVGElement>) => {
+      if (!isDrawing || !startPos) return;
+      if (currentTool === "highlight") return;
+      e.preventDefault();
+
+      const touch = e.changedTouches[0];
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const endX = ((touch.clientX - rect.left) / rect.width) * 100;
+      const endY = ((touch.clientY - rect.top) / rect.height) * 100;
+
+      const distance = Math.sqrt(
+        Math.pow(endX - startPos.x, 2) + Math.pow(endY - startPos.y, 2)
+      );
+
+      if (currentTool === "draw") {
+        if (drawPath.length > 2) {
+          await createAnnotation(endX, endY);
+        } else {
+          setIsDrawing(false);
+          setDrawPath([]);
+          setStartPos(null);
+          setPreviewRect(null);
+        }
+      } else if (currentTool === "rectangle" || currentTool === "circle") {
+        if (distance > 1) {
+          await createAnnotation(endX, endY);
+        } else {
+          setIsDrawing(false);
+          setDrawPath([]);
+          setStartPos(null);
+          setPreviewRect(null);
+        }
+      }
+    },
+    [isDrawing, startPos, currentTool, createAnnotation, drawPath]
   );
 
   const deleteAnnotation = useCallback(
@@ -1144,6 +1288,9 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                   handleMouseDown={handleMouseDown}
                   handleMouseMove={handleMouseMove}
                   handleMouseUp={handleMouseUp}
+                  handleTouchStart={handleTouchStart}
+                  handleTouchMove={handleTouchMove}
+                  handleTouchEnd={handleTouchEnd}
                   handleMouseLeave={handleMouseLeave}
                   handleAnnotationClick={handleAnnotationClick}
                   setSelectedAnnotation={setSelectedAnnotation}
@@ -1159,17 +1306,15 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
             <h4 className="text-xs sm:text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
               <TbScribble className="text-xl sm:text-2xl" /> Annotations
               <span className="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full text-xs font-semibold">
-                {annotations.filter((ann) => ann.kind !== "highlight").length}
+                {annotations.length}
               </span>
             </h4>
           </div>
 
           <div className="p-3 sm:p-4">
-            {annotations.filter((ann) => ann.kind !== "highlight").length >
-            0 ? (
+            {annotations.length > 0 ? (
               <div className="space-y-3">
                 {annotations
-                  .filter((ann) => ann.kind !== "highlight")
                   .map((ann) => (
                     <div
                       key={ann._id}
@@ -1202,6 +1347,8 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                               ) : ann.kind === "shape" &&
                                 ann.shape === "ellipse" ? (
                                 <FaRegCircle className="text-sm" />
+                              ) : ann.kind === "highlight" ? (
+                                <PiHighlighterDuotone className="text-base" />
                               ) : (
                                 <BsFileText className="text-sm" />
                               )}
@@ -1215,6 +1362,8 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                                   : ann.kind === "shape" &&
                                     ann.shape === "ellipse"
                                   ? "Circle"
+                                  : ann.kind === "highlight"
+                                  ? "Highlight"
                                   : ann.kind}
                               </p>
                               <p className="text-xs text-gray-500 flex items-center gap-1">
@@ -1289,7 +1438,7 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
             <h4 className="text-sm font-bold text-gray-700 uppercase tracking-wide flex items-center gap-2">
               <TbScribble className="text-xl" /> Annotations
               <span className="bg-purple-100 text-purple-600 px-2 py-0.5 rounded-full text-xs font-semibold">
-                {annotations.filter((ann) => ann.kind !== "highlight").length}
+                {annotations.length}
               </span>
             </h4>
           </div>
@@ -1309,11 +1458,9 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
           }`}
         >
           <div className="p-3 pt-0 max-h-64 overflow-auto">
-            {annotations.filter((ann) => ann.kind !== "highlight").length >
-            0 ? (
+            {annotations.length > 0 ? (
               <div className="space-y-2">
                 {annotations
-                  .filter((ann) => ann.kind !== "highlight")
                   .map((ann) => (
                     <div
                       key={ann._id}
@@ -1343,6 +1490,8 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                           ) : ann.kind === "shape" &&
                             ann.shape === "ellipse" ? (
                             <FaRegCircle className="text-xs" />
+                          ) : ann.kind === "highlight" ? (
+                            <PiHighlighterDuotone className="text-sm" />
                           ) : (
                             <BsFileText className="text-xs" />
                           )}
@@ -1360,6 +1509,8 @@ export const SimpleAnnotationProvider: React.FC<{ docId: string }> = ({
                                   : ann.kind === "shape" &&
                                     ann.shape === "ellipse"
                                   ? "Circle"
+                                  : ann.kind === "highlight"
+                                  ? "Highlight"
                                   : ann.kind}
                               </p>
                               <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex-shrink-0">

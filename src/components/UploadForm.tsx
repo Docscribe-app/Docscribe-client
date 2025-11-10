@@ -98,7 +98,7 @@ const UploadForm: React.FC<{ onUploaded?: () => void }> = ({ onUploaded }) => {
           <div className="rounded-full aspect-square p-4 flex items-center justify-center bg-purple-100 mb-3">
             <PiFilePdfDuotone className="text-2xl text-black" />
           </div>
-          <p className="text-black font-poppins">
+          <p className="text-black font-poppins text-center">
             <span
               className="text-purple-700 font-semibold cursor-pointer hover:underline"
               onClick={() => fileInputRef.current?.click()}
